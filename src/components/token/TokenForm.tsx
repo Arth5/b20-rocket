@@ -8,7 +8,14 @@ export default function TokenForm() {
   const [symbol, setSymbol] = useState("");
   const [supply, setSupply] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
+  const [currentStep, setCurrentStep] = useState(1);
 
+const isFormValid =
+  name.trim().length >= 2 &&
+  symbol.trim().length >= 2 &&
+  Number(supply) > 0 &&
+  logoUrl !== "";
+  
   function handleLogoChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
 
@@ -25,6 +32,48 @@ export default function TokenForm() {
 
     reader.readAsDataURL(file);
   }
+
+  function handleContinue() {
+  setCurrentStep(2);
+  }
+
+  if (currentStep === 2) {
+  return (
+    <section
+      id="create-token"
+      className="scroll-mt-20 bg-white px-6 py-20"
+    >
+      <div className="mx-auto max-w-2xl rounded-3xl border border-slate-200 bg-slate-50 p-8 text-center shadow-sm">
+        <span className="rounded-full bg-blue-100 px-4 py-2 text-sm font-semibold text-blue-700">
+          Step 2 of 3
+        </span>
+
+        <h2 className="mt-6 text-4xl font-bold text-slate-950">
+          Connect your wallet
+        </h2>
+
+        <p className="mt-4 text-slate-600">
+          Connect a wallet to continue with the B20 token launch.
+        </p>
+
+        <button
+          type="button"
+          className="mt-8 w-full rounded-xl bg-blue-600 px-6 py-4 text-lg font-semibold text-white transition hover:bg-blue-700"
+        >
+          Connect Wallet
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setCurrentStep(1)}
+          className="mt-4 text-sm font-semibold text-slate-600 hover:text-blue-700"
+        >
+          Back to token details
+        </button>
+      </div>
+    </section>
+  );
+}
 
   return (
     <section
@@ -127,10 +176,12 @@ export default function TokenForm() {
             </label>
 
             <button
-              type="button"
-              className="mt-8 w-full rounded-xl bg-blue-600 px-6 py-4 text-lg font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700"
+             type="button"
+             onClick={handleContinue}
+             disabled={!isFormValid}
+             className="mt-8 w-full rounded-xl bg-blue-600 px-6 py-4 text-lg font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none"
             >
-              Continue
+             Continue
             </button>
           </div>
 
