@@ -2,6 +2,7 @@
 
 import { ChangeEvent, useState } from "react";
 import TokenPreview from "@/components/token/TokenPreview";
+import { ConnectButton } from "@rainbow-me/rainbowkit";
 
 export default function TokenForm() {
   const [name, setName] = useState("");
@@ -56,12 +57,9 @@ const isFormValid =
           Connect a wallet to continue with the B20 token launch.
         </p>
 
-        <button
-          type="button"
-          className="mt-8 w-full rounded-xl bg-blue-600 px-6 py-4 text-lg font-semibold text-white transition hover:bg-blue-700"
-        >
-          Connect Wallet
-        </button>
+        <div className="mt-8 flex justify-center">
+          <ConnectButton />
+        </div>
 
         <button
           type="button"

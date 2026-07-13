@@ -1,3 +1,7 @@
+"use client";
+
+import { ConnectButton } from "@rainbow-me/rainbowkit";
+
 export default function Navbar() {
   return (
     <nav className="w-full border-b border-blue-200 bg-white">
@@ -6,9 +10,7 @@ export default function Navbar() {
           🚀 B20 Rocket
         </h1>
 
-        <button className="rounded-lg bg-blue-600 px-5 py-2 font-semibold text-white hover:bg-blue-700">
-          Connect Wallet
-        </button>
+        <ConnectButton />
       </div>
     </nav>
   );
