@@ -193,4 +193,17 @@ contract B20TokenTest is Test {
             supplyBefore - (500 * 10 ** token.decimals())
         );
     }
+
+    function testTotalSupplyIncreasesAfterMint() public {
+        address holder = address(0xCAFE);
+        uint256 supplyBefore = token.totalSupply();
+
+        vm.prank(owner);
+        token.mint(holder, 500);
+
+        assertEq(
+            token.totalSupply(),
+            supplyBefore + (500 * 10 ** token.decimals())
+        );
+    }
 }
