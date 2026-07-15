@@ -123,4 +123,10 @@ contract B20TokenTest is Test {
     function testExistsReturnsTrueForTokenHolder() public view {
         assertTrue(token.exists(owner));
     }
+
+    function testExistsReturnsFalseForNonHolder() public view {
+        address nonHolder = address(0xDEAD);
+
+        assertFalse(token.exists(nonHolder));
+    }
 }
