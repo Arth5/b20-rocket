@@ -112,4 +112,11 @@ contract B20TokenTest is Test {
     function testGetOwnerReturnsCorrectOwner() public view {
         assertEq(token.getOwner(), owner);
     }
+
+    function testGetBalanceReturnsCorrectBalance() public view {
+        assertEq(
+            token.getBalance(owner),
+            token.balanceOf(owner)
+        );
+    }
 }
