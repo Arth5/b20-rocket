@@ -149,4 +149,11 @@ contract B20TokenTest is Test {
 
         assertEq(token.getBalance(emptyAccount), 0);
     }
+
+    function testCannotBurnMoreThanBalance() public {
+        vm.prank(owner);
+        vm.expectRevert();
+
+        token.burn(2_000_000);
+    }
 }
