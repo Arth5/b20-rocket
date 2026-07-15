@@ -181,4 +181,16 @@ contract B20TokenTest is Test {
 
         assertFalse(token.exists(owner));
     }
+
+    function testTotalSupplyDecreasesAfterBurn() public {
+        uint256 supplyBefore = token.totalSupply();
+
+        vm.prank(owner);
+        token.burn(500);
+
+        assertEq(
+            token.totalSupply(),
+            supplyBefore - (500 * 10 ** token.decimals())
+        );
+    }
 }
