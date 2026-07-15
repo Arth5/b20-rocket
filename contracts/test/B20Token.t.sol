@@ -129,4 +129,18 @@ contract B20TokenTest is Test {
 
         assertFalse(token.exists(nonHolder));
     }
+
+    function testGetTokenInfoReturnsCorrectData() public view {
+        (
+            string memory tokenName,
+            string memory tokenSymbol,
+            uint8 tokenDecimals,
+            uint256 tokenSupply
+        ) = token.getTokenInfo();
+
+        assertEq(tokenName, "B20 Rocket");
+        assertEq(tokenSymbol, "B20");
+        assertEq(tokenDecimals, 18);
+        assertEq(tokenSupply, token.totalSupply());
+    }
 }
