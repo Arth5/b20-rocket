@@ -156,4 +156,13 @@ contract B20TokenTest is Test {
 
         token.burn(2_000_000);
     }
+
+    function testEmptyAccountCannotBurnTokens() public {
+        address emptyAccount = address(0x5678);
+
+        vm.prank(emptyAccount);
+        vm.expectRevert();
+
+        token.burn(100);
+    }
 }
