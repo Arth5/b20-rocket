@@ -95,4 +95,17 @@ contract B20TokenTest is Test {
             balanceBefore - (400 * 10 ** token.decimals())
         );
     }
+
+    function testNonOwnerCannotBurnFromAnotherAccount() public {
+        address holder = address(0xCAFE);
+        address attacker = address(0xBEEF);
+
+        vm.prank(owner);
+        token.mint(holder, 1_000);
+
+        vm.prank(attacker);
+        vm.expectRevert();
+
+        token.burnFrom(holder, 100);
+    }
 }
