@@ -26,4 +26,22 @@ contract B20TokenTest is Test {
         assertEq(token.totalSupply(), 1_000_000 * 10 ** 18);
         assertEq(token.balanceOf(owner), 1_000_000 * 10 ** 18);
     }
+
+    function testOwnerCanMintMoreTokens() public {
+        uint256 supplyBefore = token.totalSupply();
+        uint256 balanceBefore = token.balanceOf(owner);
+
+        vm.prank(owner);
+        token.mint(owner, 500);
+
+        assertEq(
+           token.totalSupply(),
+           supplyBefore + (500 * 10 ** token.decimals())
+        );
+
+        assertEq(
+           token.balanceOf(owner),
+           balanceBefore + (500 * 10 ** token.decimals())
+        );
+    }
 }
