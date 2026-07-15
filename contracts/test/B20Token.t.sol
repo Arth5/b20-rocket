@@ -72,4 +72,27 @@ contract B20TokenTest is Test {
            balanceBefore - (250 * 10 ** token.decimals())
         );
     }
+
+    function testOwnerCanBurnTokensFromAnotherAccount() public {
+        address holder = address(0xCAFE);
+
+        vm.prank(owner);
+        token.mint(holder, 1_000);
+
+        uint256 supplyBefore = token.totalSupply();
+        uint256 balanceBefore = token.balanceOf(holder);
+
+        vm.prank(owner);
+        token.burnFrom(holder, 400);
+
+        assertEq(
+            token.totalSupply(),
+            supplyBefore - (400 * 10 ** token.decimals())
+        );
+
+        assertEq(
+            token.balanceOf(holder),
+            balanceBefore - (400 * 10 ** token.decimals())
+        );
+    }
 }
