@@ -6,11 +6,14 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract B20Token is ERC20, Ownable {
     constructor(
-       string memory name_,
-       string memory symbol_,
-       address initialOwner_
+        string memory name_,
+        string memory symbol_,
+        uint256 initialSupply_,
+        address initialOwner_
     )
-       ERC20(name_, symbol_)
-       Ownable(initialOwner_)
-    {}
+        ERC20(name_, symbol_)
+        Ownable(initialOwner_)
+    {
+        _mint(initialOwner_, initialSupply_ * 10 ** decimals());
+    }
 }
