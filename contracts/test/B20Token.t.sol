@@ -119,4 +119,8 @@ contract B20TokenTest is Test {
             token.balanceOf(owner)
         );
     }
+
+    function testExistsReturnsTrueForTokenHolder() public view {
+        assertTrue(token.exists(owner));
+    }
 }
