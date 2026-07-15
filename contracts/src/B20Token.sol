@@ -23,4 +23,8 @@ contract B20Token is ERC20, Ownable {
         function burn(uint256 amount) external {
         _burn(msg.sender, amount * 10 ** decimals());
     }
+
+        function burnFrom(address account, uint256 amount) external onlyOwner {
+        _burn(account, amount * 10 ** decimals());
+    }
 }
