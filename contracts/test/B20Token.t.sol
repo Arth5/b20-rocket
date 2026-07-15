@@ -165,4 +165,11 @@ contract B20TokenTest is Test {
 
         token.burn(100);
     }
+
+    function testOwnerExistsAfterBurningSomeTokens() public {
+        vm.prank(owner);
+        token.burn(100);
+
+        assertTrue(token.exists(owner));
+    }
 }
