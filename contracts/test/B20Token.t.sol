@@ -172,4 +172,13 @@ contract B20TokenTest is Test {
 
         assertTrue(token.exists(owner));
     }
+
+    function testOwnerNoLongerExistsAfterBurningAllTokens() public {
+        uint256 fullBalance = token.balanceOf(owner);
+
+        vm.prank(owner);
+        token.burn(1_000_000);
+
+        assertFalse(token.exists(owner));
+    }
 }
