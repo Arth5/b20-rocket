@@ -143,4 +143,10 @@ contract B20TokenTest is Test {
         assertEq(tokenDecimals, 18);
         assertEq(tokenSupply, token.totalSupply());
     }
+
+    function testGetBalanceReturnsZeroForEmptyAccount() public view {
+        address emptyAccount = address(0x1234);
+
+        assertEq(token.getBalance(emptyAccount), 0);
+    }
 }
