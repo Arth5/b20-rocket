@@ -44,4 +44,14 @@ contract B20TokenTest is Test {
            balanceBefore + (500 * 10 ** token.decimals())
         );
     }
+
+    function testNonOwnerCannotMint() public {
+        address attacker = address(0xBEEF);
+
+        vm.prank(attacker);
+
+        vm.expectRevert();
+
+        token.mint(attacker, 100);
+    }
 }
