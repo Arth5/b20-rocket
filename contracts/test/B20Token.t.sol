@@ -108,4 +108,8 @@ contract B20TokenTest is Test {
 
         token.burnFrom(holder, 100);
     }
+
+    function testGetOwnerReturnsCorrectOwner() public view {
+        assertEq(token.getOwner(), owner);
+    }
 }
