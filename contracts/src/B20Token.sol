@@ -52,4 +52,11 @@ contract B20Token is ERC20, Ownable {
         function exists(address account) external view returns (bool) {
         return balanceOf(account) > 0;
     }
+        function getBalance(address account)
+        external
+        view
+        returns (uint256)
+    {
+        return balanceOf(account);
+    }
 }
