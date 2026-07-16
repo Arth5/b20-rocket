@@ -515,4 +515,15 @@ contract B20TokenTest is Test {
 
         assertEq(token.balanceOf(owner), balanceBefore);
     }
+
+    function testBurnThenMintRestoresTotalSupplyCorrectly() public {
+        uint256 supplyBefore = token.totalSupply();
+
+        vm.startPrank(owner);
+        token.burn(200);
+        token.mint(owner, 200);
+        vm.stopPrank();
+
+        assertEq(token.totalSupply(), supplyBefore);
+    }
 }
