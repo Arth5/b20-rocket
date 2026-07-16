@@ -443,4 +443,11 @@ contract B20TokenTest is Test {
             supplyBefore - (250 * 10 ** token.decimals())
         );
     }
+
+    function testBurnMultipleTokensKeepsOwnerAsHolder() public {
+        vm.prank(owner);
+        token.burn(250);
+
+        assertTrue(token.exists(owner));
+    }
 }
