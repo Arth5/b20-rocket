@@ -371,4 +371,15 @@ contract B20TokenTest is Test {
 
         assertTrue(token.exists(holder));
     }
+
+    function testBurnAllTokensRemovesHolderStatus() public {
+        uint256 ownerBalance = token.balanceOf(owner);
+        uint256 amountToBurn = ownerBalance / (10 ** token.decimals());
+
+        vm.prank(owner);
+        token.burn(amountToBurn);
+
+        assertEq(token.balanceOf(owner), 0);
+        assertFalse(token.exists(owner));
+    }
 }
