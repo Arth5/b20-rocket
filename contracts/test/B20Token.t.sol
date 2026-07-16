@@ -240,4 +240,16 @@ contract B20TokenTest is Test {
             balanceBefore - (500 * 10 ** token.decimals())
         );
     }
+
+    function testMintedHolderBalanceIsCorrect() public {
+        address newHolder = address(0xABCD);
+
+        vm.prank(owner);
+        token.mint(newHolder, 750);
+
+        assertEq(
+            token.balanceOf(newHolder),
+            750 * 10 ** token.decimals()
+        );
+    }
 }
