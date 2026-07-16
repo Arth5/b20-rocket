@@ -324,4 +324,13 @@ contract B20TokenTest is Test {
 
         assertEq(token.balanceOf(holder), balanceBefore);
     }
+
+    function testMintZeroTokensDoesNotCreateHolder() public {
+        address newHolder = address(0xCAFE);
+
+        vm.prank(owner);
+        token.mint(newHolder, 0);
+
+        assertFalse(token.exists(newHolder));
+    }
 }
