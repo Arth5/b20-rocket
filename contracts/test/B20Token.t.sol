@@ -360,4 +360,15 @@ contract B20TokenTest is Test {
             250 * 10 ** token.decimals()
         );
     }
+
+    function testMintToExistingHolderKeepsHolderStatus() public {
+        address holder = address(0x5678);
+
+        vm.startPrank(owner);
+        token.mint(holder, 100);
+        token.mint(holder, 150);
+        vm.stopPrank();
+
+        assertTrue(token.exists(holder));
+    }
 }
