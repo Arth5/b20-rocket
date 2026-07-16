@@ -450,4 +450,17 @@ contract B20TokenTest is Test {
 
         assertTrue(token.exists(owner));
     }
+
+    function testBurnMultipleTokensReducesBalanceAndSupplyEqually() public {
+        uint256 balanceBefore = token.balanceOf(owner);
+        uint256 supplyBefore = token.totalSupply();
+
+        vm.prank(owner);
+        token.burn(300);
+
+        uint256 burnedAmount = 300 * 10 ** token.decimals();
+
+        assertEq(token.balanceOf(owner), balanceBefore - burnedAmount);
+        assertEq(token.totalSupply(), supplyBefore - burnedAmount);
+    }
 }
