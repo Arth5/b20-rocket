@@ -333,4 +333,17 @@ contract B20TokenTest is Test {
 
         assertFalse(token.exists(newHolder));
     }
+
+    function testMintCreatesHolderWithPositiveBalance() public {
+        address newHolder = address(0x1234);
+
+        vm.prank(owner);
+        token.mint(newHolder, 250);
+
+        assertTrue(token.exists(newHolder));
+        assertEq(
+            token.balanceOf(newHolder),
+            250 * 10 ** token.decimals()
+        );
+    }
 }
