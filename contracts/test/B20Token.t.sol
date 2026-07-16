@@ -252,4 +252,18 @@ contract B20TokenTest is Test {
             750 * 10 ** token.decimals()
         );
     }
+
+    function testMintingTwiceAccumulatesBalance() public {
+        address newHolder = address(0xD00D);
+
+        vm.startPrank(owner);
+        token.mint(newHolder, 300);
+        token.mint(newHolder, 200);
+        vm.stopPrank();
+
+        assertEq(
+            token.balanceOf(newHolder),
+            500 * 10 ** token.decimals()
+        );
+    }
 }
