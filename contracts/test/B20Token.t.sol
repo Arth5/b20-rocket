@@ -296,4 +296,13 @@ contract B20TokenTest is Test {
 
         assertEq(token.totalSupply(), supplyBefore);
     }
+
+    function testBurnZeroTokensDoesNotChangeBalance() public {
+        uint256 balanceBefore = token.balanceOf(owner);
+
+        vm.prank(owner);
+        token.burn(0);
+
+        assertEq(token.balanceOf(owner), balanceBefore);
+    }
 }
