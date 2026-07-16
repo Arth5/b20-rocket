@@ -314,4 +314,14 @@ contract B20TokenTest is Test {
 
         assertEq(token.totalSupply(), supplyBefore);
     }
+
+    function testMintZeroTokensDoesNotChangeBalance() public {
+        address holder = address(0xBEEF);
+        uint256 balanceBefore = token.balanceOf(holder);
+
+        vm.prank(owner);
+        token.mint(holder, 0);
+
+        assertEq(token.balanceOf(holder), balanceBefore);
+    }
 }
