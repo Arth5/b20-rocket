@@ -206,4 +206,13 @@ contract B20TokenTest is Test {
             supplyBefore + (500 * 10 ** token.decimals())
         );
     }
+
+    function testHolderExistsAfterReceivingMintedTokens() public {
+        address newHolder = address(0xBEEF);
+
+        vm.prank(owner);
+        token.mint(newHolder, 500);
+
+        assertTrue(token.exists(newHolder));
+    }
 }
