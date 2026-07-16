@@ -463,4 +463,20 @@ contract B20TokenTest is Test {
         assertEq(token.balanceOf(owner), balanceBefore - burnedAmount);
         assertEq(token.totalSupply(), supplyBefore - burnedAmount);
     }
+
+    function testBurnMultipleTimesAccumulatesCorrectly() public {
+        uint256 balanceBefore = token.balanceOf(owner);
+
+        vm.startPrank(owner);
+        token.burn(100);
+        token.burn(200);
+        vm.stopPrank();
+
+        uint256 totalBurned = 300 * 10 ** token.decimals();
+
+        assertEq(
+            token.balanceOf(owner),
+            balanceBefore - totalBurned
+        );
+    }
 }
