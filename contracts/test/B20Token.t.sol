@@ -495,4 +495,13 @@ contract B20TokenTest is Test {
             supplyBefore - totalBurned
         );
     }
+
+    function testBurnMultipleTimesKeepsOwnerAsHolder() public {
+        vm.startPrank(owner);
+        token.burn(100);
+        token.burn(200);
+        vm.stopPrank();
+
+        assertTrue(token.exists(owner));
+    }
 }
