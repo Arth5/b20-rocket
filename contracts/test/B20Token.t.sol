@@ -280,4 +280,11 @@ contract B20TokenTest is Test {
             supplyBefore + (500 * 10 ** token.decimals())
         );
     }
+
+    function testMintToZeroAddressReverts() public {
+        vm.prank(owner);
+        vm.expectRevert();
+
+        token.mint(address(0), 500);
+    }
 }
