@@ -419,4 +419,16 @@ contract B20TokenTest is Test {
             supplyBefore - (1 * 10 ** token.decimals())
         );
     }
+
+    function testBurnMultipleTokensDecreasesBalanceCorrectly() public {
+        uint256 balanceBefore = token.balanceOf(owner);
+
+        vm.prank(owner);
+        token.burn(250);
+
+        assertEq(
+            token.balanceOf(owner),
+            balanceBefore - (250 * 10 ** token.decimals())
+        );
+    }
 }
