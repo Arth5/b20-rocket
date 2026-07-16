@@ -395,4 +395,16 @@ contract B20TokenTest is Test {
             balanceBefore - (100 * 10 ** token.decimals())
         );
     }
+
+    function testBurnOneTokenDecreasesBalanceCorrectly() public {
+        uint256 balanceBefore = token.balanceOf(owner);
+
+        vm.prank(owner);
+        token.burn(1);
+
+        assertEq(
+            token.balanceOf(owner),
+            balanceBefore - (1 * 10 ** token.decimals())
+        );
+    }
 }
