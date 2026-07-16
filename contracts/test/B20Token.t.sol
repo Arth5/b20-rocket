@@ -305,4 +305,13 @@ contract B20TokenTest is Test {
 
         assertEq(token.balanceOf(owner), balanceBefore);
     }
+
+    function testMintZeroTokensDoesNotChangeSupply() public {
+        uint256 supplyBefore = token.totalSupply();
+
+        vm.prank(owner);
+        token.mint(address(0xBEEF), 0);
+
+        assertEq(token.totalSupply(), supplyBefore);
+    }
 }
