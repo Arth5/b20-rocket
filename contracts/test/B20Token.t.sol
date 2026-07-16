@@ -287,4 +287,13 @@ contract B20TokenTest is Test {
 
         token.mint(address(0), 500);
     }
+
+    function testBurnZeroTokensDoesNotChangeSupply() public {
+        uint256 supplyBefore = token.totalSupply();
+
+        vm.prank(owner);
+        token.burn(0);
+
+        assertEq(token.totalSupply(), supplyBefore);
+    }
 }
