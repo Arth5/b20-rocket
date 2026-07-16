@@ -215,4 +215,17 @@ contract B20TokenTest is Test {
 
         assertTrue(token.exists(newHolder));
     }
+
+    function testHolderBalanceIncreasesAfterMint() public {
+        address newHolder = address(0xBEEF);
+        uint256 balanceBefore = token.balanceOf(newHolder);
+
+        vm.prank(owner);
+        token.mint(newHolder, 500);
+
+        assertEq(
+            token.balanceOf(newHolder),
+            balanceBefore + (500 * 10 ** token.decimals())
+        );
+    }
 }
