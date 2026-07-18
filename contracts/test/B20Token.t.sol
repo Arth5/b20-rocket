@@ -766,4 +766,21 @@ contract B20TokenTest is Test {
             350 * 10 ** token.decimals()
         );
     }
+
+    function testMintToTwoNewHoldersAfterFullBurnCreatesBothHolders() public {
+        address holderOne = address(0x3333);
+        address holderTwo = address(0x4444);
+        uint256 ownerBalance = token.balanceOf(owner);
+        uint256 amountToBurn = ownerBalance / (10 ** token.decimals());
+
+        vm.startPrank(owner);
+        token.burn(amountToBurn);
+        token.mint(holderOne, 100);
+        token.mint(holderTwo, 200);
+        vm.stopPrank();
+
+        assertFalse(token.exists(owner));
+        assertTrue(token.exists(holderOne));
+        assertTrue(token.exists(holderTwo));
+    }
 }
