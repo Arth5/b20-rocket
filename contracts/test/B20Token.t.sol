@@ -800,4 +800,22 @@ contract B20TokenTest is Test {
         assertFalse(token.exists(owner));
         assertEq(token.totalSupply(), 300 * 10 ** token.decimals());
     }
+
+    function testMintToTwoNewHoldersAfterFullBurnKeepsOwnerNonExistent() public {
+        address holderOne = address(0x7777);
+        address holderTwo = address(0x8888);
+        uint256 ownerBalance = token.balanceOf(owner);
+        uint256 amountToBurn = ownerBalance / (10 ** token.decimals());
+
+        vm.startPrank(owner);
+        token.burn(amountToBurn);
+        token.mint(holderOne, 175);
+        token.mint(holderTwo, 225);
+        vm.stopPrank();
+
+        assertFalse(token.exists(owner));
+        assertTrue(token.exists(holderOne));
+        assertTrue(token.exists(holderTwo));
+        assertEq(token.totalSupply(), 400 * 10 ** token.decimals());
+    }
 }
