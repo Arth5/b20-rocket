@@ -1125,4 +1125,20 @@ contract B20TokenTest is Test {
             500 * 10 ** token.decimals()
         );
     }
+
+    function testMintAfterFullBurnRestoresOwnerExistence() public {
+        uint256 ownerBalance = token.balanceOf(owner);
+        uint256 amountToBurn = ownerBalance / (10 ** token.decimals());
+
+        vm.startPrank(owner);
+        token.burn(amountToBurn);
+
+        assertFalse(token.exists(owner));
+
+        token.mint(owner, 500);
+
+        vm.stopPrank();
+
+        assertTrue(token.exists(owner));
+    }
 }
