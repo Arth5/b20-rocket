@@ -1054,4 +1054,24 @@ contract B20TokenTest is Test {
 
         assertEq(combinedBalance, expectedBalance);
     }
+
+    function testMintToThreeNewHoldersAfterFullBurnEachBalanceIsPositive() public {
+        address holderOne = address(0x1501);
+        address holderTwo = address(0x1502);
+        address holderThree = address(0x1503);
+
+        uint256 ownerBalance = token.balanceOf(owner);
+        uint256 amountToBurn = ownerBalance / (10 ** token.decimals());
+
+        vm.startPrank(owner);
+        token.burn(amountToBurn);
+        token.mint(holderOne, 100);
+        token.mint(holderTwo, 200);
+        token.mint(holderThree, 300);
+        vm.stopPrank();
+
+        assertGt(token.balanceOf(holderOne), 0);
+        assertGt(token.balanceOf(holderTwo), 0);
+        assertGt(token.balanceOf(holderThree), 0);
+    }
 }
