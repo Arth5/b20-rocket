@@ -1087,4 +1087,23 @@ contract B20TokenTest is Test {
 
         vm.stopPrank();
     }
+
+    function testMintAfterFullBurnRestoresTotalSupply() public {
+        uint256 ownerBalance = token.balanceOf(owner);
+        uint256 amountToBurn = ownerBalance / (10 ** token.decimals());
+
+        vm.startPrank(owner);
+        token.burn(amountToBurn);
+
+        assertEq(token.totalSupply(), 0);
+
+        token.mint(owner, 500);
+
+        vm.stopPrank();
+
+        assertEq(
+            token.totalSupply(),
+            500 * 10 ** token.decimals()
+        );
+    }
 }
