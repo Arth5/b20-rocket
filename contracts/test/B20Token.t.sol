@@ -1074,4 +1074,17 @@ contract B20TokenTest is Test {
         assertGt(token.balanceOf(holderTwo), 0);
         assertGt(token.balanceOf(holderThree), 0);
     }
+
+    function testMintToThreeNewHoldersAfterFullBurnOwnerCannotBurnAgain() public {
+        uint256 ownerBalance = token.balanceOf(owner);
+        uint256 amountToBurn = ownerBalance / (10 ** token.decimals());
+
+        vm.startPrank(owner);
+        token.burn(amountToBurn);
+
+        vm.expectRevert();
+        token.burn(1);
+
+        vm.stopPrank();
+    }
 }
