@@ -1141,4 +1141,30 @@ contract B20TokenTest is Test {
 
         assertTrue(token.exists(owner));
     }
+
+    function testMintAfterFullBurnRestoresOwnerAndSupplyConsistently() public {
+        uint256 ownerBalance = token.balanceOf(owner);
+        uint256 amountToBurn = ownerBalance / (10 ** token.decimals());
+
+        vm.startPrank(owner);
+        token.burn(amountToBurn);
+
+        assertEq(token.balanceOf(owner), 0);
+        assertEq(token.totalSupply(), 0);
+        assertFalse(token.exists(owner));
+
+        token.mint(owner, 1000);
+
+        vm.stopPrank();
+
+        assertEq(
+            token.balanceOf(owner),
+            1000 * 10 ** token.decimals()
+        );
+        assertEq(
+            token.totalSupply(),
+            1000 * 10 ** token.decimals()
+        );
+        assertTrue(token.exists(owner));
+    }
 }
