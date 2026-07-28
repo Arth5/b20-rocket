@@ -3,6 +3,8 @@
 import { ChangeEvent, useState } from "react";
 import TokenPreview from "@/components/token/TokenPreview";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
+import { useAccount, useDeployContract } from "wagmi";
+import B20TokenArtifact from "@/contracts/B20Token.json";
 
 export default function TokenForm() {
   const [name, setName] = useState("");
@@ -10,6 +12,15 @@ export default function TokenForm() {
   const [supply, setSupply] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
   const [currentStep, setCurrentStep] = useState(1);
+
+  const { address, isConnected, chainId } = useAccount();
+
+  const {
+    deployContract,
+    data: deployHash,
+    isPending: isDeployPending,
+    error: deployError,
+  } = useDeployContract();
 
 const isFormValid =
   name.trim().length >= 2 &&
@@ -38,6 +49,28 @@ const isFormValid =
   setCurrentStep(2);
   }
 
+  function handleDeploy() {
+    if (!isConnected || !address) {
+      return;
+    }
+
+    if (chainId !== 8453) {
+      alert("Please switch your wallet to Base Mainnet before deploying.");
+      return;
+    }
+
+    deployContract({
+      abi: B20TokenArtifact.abi,
+      bytecode: B20TokenArtifact.bytecode.object as `0x${string}`,
+      args: [
+        name,
+        symbol,
+        BigInt(supply),
+        address,
+      ],
+    });
+  }
+
   if (currentStep === 2) {
   return (
     <section
@@ -60,6 +93,17 @@ const isFormValid =
         <div className="mt-8 flex justify-center">
           <ConnectButton />
         </div>
+
+        {isConnected && (
+          <button
+            type="button"
+            onClick={handleDeploy}
+            disabled={isDeployPending}
+            className="mt-6 w-full rounded-xl bg-blue-600 px-6 py-4 text-lg font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-400"
+          >
+            {isDeployPending ? "Confirming deployment..." : "Deploy B20 Token"}
+          </button>
+        )}
 
         <button
           type="button"

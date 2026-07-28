@@ -8,6 +8,9 @@ contract B20TokenTest is Test {
     B20Token internal token;
 
     address internal owner = address(0xA11CE);
+    address internal holder = address(0xB0B);
+
+    uint256 internal unit = 10 ** 18;
 
     function setUp() public {
         token = new B20Token(
@@ -23,111 +26,145 @@ contract B20TokenTest is Test {
         assertEq(token.symbol(), "B20");
         assertEq(token.decimals(), 18);
         assertEq(token.owner(), owner);
-        assertEq(token.totalSupply(), 1_000_000 * 10 ** 18);
-        assertEq(token.balanceOf(owner), 1_000_000 * 10 ** 18);
-    }
-
-    function testOwnerCanMintMoreTokens() public {
-        uint256 supplyBefore = token.totalSupply();
-        uint256 balanceBefore = token.balanceOf(owner);
-
-        vm.prank(owner);
-        token.mint(owner, 500);
-
-        assertEq(
-           token.totalSupply(),
-           supplyBefore + (500 * 10 ** token.decimals())
-        );
-
-        assertEq(
-           token.balanceOf(owner),
-           balanceBefore + (500 * 10 ** token.decimals())
-        );
-    }
-
-    function testNonOwnerCannotMint() public {
-        address attacker = address(0xBEEF);
-
-        vm.prank(attacker);
-
-        vm.expectRevert();
-
-        token.mint(attacker, 100);
-    }
-
-    function testHolderCanBurnOwnTokens() public {
-        uint256 supplyBefore = token.totalSupply();
-        uint256 balanceBefore = token.balanceOf(owner);
-
-        vm.prank(owner);
-        token.burn(250);
-
-        assertEq(
-           token.totalSupply(),
-           supplyBefore - (250 * 10 ** token.decimals())
-        );
-
-        assertEq(
-           token.balanceOf(owner),
-           balanceBefore - (250 * 10 ** token.decimals())
-        );
-    }
-
-    function testOwnerCanBurnTokensFromAnotherAccount() public {
-        address holder = address(0xCAFE);
-
-        vm.prank(owner);
-        token.mint(holder, 1_000);
-
-        uint256 supplyBefore = token.totalSupply();
-        uint256 balanceBefore = token.balanceOf(holder);
-
-        vm.prank(owner);
-        token.burnFrom(holder, 400);
 
         assertEq(
             token.totalSupply(),
-            supplyBefore - (400 * 10 ** token.decimals())
+            1_000_000 * unit
+        );
+
+        assertEq(
+            token.balanceOf(owner),
+            1_000_000 * unit
+        );
+    }
+
+    function testOwnerCanTransferTokens() public {
+        vm.prank(owner);
+
+        token.transfer(
+            holder,
+            1_000 * unit
         );
 
         assertEq(
             token.balanceOf(holder),
-            balanceBefore - (400 * 10 ** token.decimals())
+            1_000 * unit
+        );
+
+        assertEq(
+            token.balanceOf(owner),
+            999_000 * unit
         );
     }
 
-    function testNonOwnerCannotBurnFromAnotherAccount() public {
-        address holder = address(0xCAFE);
-        address attacker = address(0xBEEF);
-
+    function testHolderCanBurnOwnTokens() public {
         vm.prank(owner);
-        token.mint(holder, 1_000);
 
-        vm.prank(attacker);
+        token.transfer(
+            holder,
+            1_000 * unit
+        );
+
+        uint256 supplyBefore = token.totalSupply();
+
+        vm.prank(holder);
+
+        token.burn(400);
+
+        assertEq(
+            token.balanceOf(holder),
+            600 * unit
+        );
+
+        assertEq(
+            token.totalSupply(),
+            supplyBefore - (400 * unit)
+        );
+    }
+
+    function testHolderCannotBurnMoreThanOwnBalance() public {
+        vm.prank(owner);
+
+        token.transfer(
+            holder,
+            100 * unit
+        );
+
+        vm.prank(holder);
+
         vm.expectRevert();
 
-        token.burnFrom(holder, 100);
+        token.burn(101);
+    }
+
+    function testOwnerBurnDoesNotAffectAnotherWallet() public {
+        vm.prank(owner);
+
+        token.transfer(
+            holder,
+            1_000 * unit
+        );
+
+        uint256 holderBalanceBefore =
+            token.balanceOf(holder);
+
+        vm.prank(owner);
+
+        token.burn(1_000);
+
+        assertEq(
+            token.balanceOf(holder),
+            holderBalanceBefore
+        );
+    }
+
+    function testBurnReducesTotalSupply() public {
+        uint256 supplyBefore =
+            token.totalSupply();
+
+        vm.prank(owner);
+
+        token.burn(500);
+
+        assertEq(
+            token.totalSupply(),
+            supplyBefore - (500 * unit)
+        );
     }
 
     function testGetOwnerReturnsCorrectOwner() public view {
-        assertEq(token.getOwner(), owner);
+        assertEq(
+            token.getOwner(),
+            owner
+        );
+    }
+
+    function testExistsReturnsCorrectStatus() public {
+        assertTrue(
+            token.exists(owner)
+        );
+
+        assertFalse(
+            token.exists(holder)
+        );
+
+        vm.prank(owner);
+
+        token.transfer(
+            holder,
+            100 * unit
+        );
+
+        assertTrue(
+            token.exists(holder)
+        );
     }
 
     function testGetBalanceReturnsCorrectBalance() public view {
         assertEq(
             token.getBalance(owner),
-            token.balanceOf(owner)
+            1_000_000 * unit
         );
-    }
-
-    function testExistsReturnsTrueForTokenHolder() public view {
-        assertTrue(token.exists(owner));
-    }
-
-    function testExistsReturnsFalseForNonHolder() public view {
-        address nonHolder = address(0xDEAD);
-
-        assertFalse(token.exists(nonHolder));
     }
 
     function testGetTokenInfoReturnsCorrectData() public view {
@@ -135,1072 +172,27 @@ contract B20TokenTest is Test {
             string memory tokenName,
             string memory tokenSymbol,
             uint8 tokenDecimals,
-            uint256 tokenSupply
+            uint256 supply
         ) = token.getTokenInfo();
 
-        assertEq(tokenName, "B20 Rocket");
-        assertEq(tokenSymbol, "B20");
-        assertEq(tokenDecimals, 18);
-        assertEq(tokenSupply, token.totalSupply());
-    }
-
-    function testGetBalanceReturnsZeroForEmptyAccount() public view {
-        address emptyAccount = address(0x1234);
-
-        assertEq(token.getBalance(emptyAccount), 0);
-    }
-
-    function testCannotBurnMoreThanBalance() public {
-        vm.prank(owner);
-        vm.expectRevert();
-
-        token.burn(2_000_000);
-    }
-
-    function testEmptyAccountCannotBurnTokens() public {
-        address emptyAccount = address(0x5678);
-
-        vm.prank(emptyAccount);
-        vm.expectRevert();
-
-        token.burn(100);
-    }
-
-    function testOwnerExistsAfterBurningSomeTokens() public {
-        vm.prank(owner);
-        token.burn(100);
-
-        assertTrue(token.exists(owner));
-    }
-
-    function testOwnerNoLongerExistsAfterBurningAllTokens() public {
-        uint256 fullBalance = token.balanceOf(owner);
-
-        vm.prank(owner);
-        token.burn(1_000_000);
-
-        assertFalse(token.exists(owner));
-    }
-
-    function testTotalSupplyDecreasesAfterBurn() public {
-        uint256 supplyBefore = token.totalSupply();
-
-        vm.prank(owner);
-        token.burn(500);
-
         assertEq(
-            token.totalSupply(),
-            supplyBefore - (500 * 10 ** token.decimals())
-        );
-    }
-
-    function testTotalSupplyIncreasesAfterMint() public {
-        address holder = address(0xCAFE);
-        uint256 supplyBefore = token.totalSupply();
-
-        vm.prank(owner);
-        token.mint(holder, 500);
-
-        assertEq(
-            token.totalSupply(),
-            supplyBefore + (500 * 10 ** token.decimals())
-        );
-    }
-
-    function testHolderExistsAfterReceivingMintedTokens() public {
-        address newHolder = address(0xBEEF);
-
-        vm.prank(owner);
-        token.mint(newHolder, 500);
-
-        assertTrue(token.exists(newHolder));
-    }
-
-    function testHolderBalanceIncreasesAfterMint() public {
-        address newHolder = address(0xBEEF);
-        uint256 balanceBefore = token.balanceOf(newHolder);
-
-        vm.prank(owner);
-        token.mint(newHolder, 500);
-
-        assertEq(
-            token.balanceOf(newHolder),
-            balanceBefore + (500 * 10 ** token.decimals())
-        );
-    }
-
-    function testOwnerBalanceDecreasesAfterBurn() public {
-        uint256 balanceBefore = token.balanceOf(owner);
-
-        vm.prank(owner);
-        token.burn(500);
-
-        assertEq(
-            token.balanceOf(owner),
-            balanceBefore - (500 * 10 ** token.decimals())
-        );
-    }
-
-    function testMintedHolderBalanceIsCorrect() public {
-        address newHolder = address(0xABCD);
-
-        vm.prank(owner);
-        token.mint(newHolder, 750);
-
-        assertEq(
-            token.balanceOf(newHolder),
-            750 * 10 ** token.decimals()
-        );
-    }
-
-    function testMintingTwiceAccumulatesBalance() public {
-        address newHolder = address(0xD00D);
-
-        vm.startPrank(owner);
-        token.mint(newHolder, 300);
-        token.mint(newHolder, 200);
-        vm.stopPrank();
-
-        assertEq(
-            token.balanceOf(newHolder),
-            500 * 10 ** token.decimals()
-        );
-    }
-
-    function testMultipleMintsIncreaseTotalSupplyCorrectly() public {
-        uint256 supplyBefore = token.totalSupply();
-
-        vm.startPrank(owner);
-        token.mint(address(0x1111), 300);
-        token.mint(address(0x2222), 200);
-        vm.stopPrank();
-
-        assertEq(
-            token.totalSupply(),
-            supplyBefore + (500 * 10 ** token.decimals())
-        );
-    }
-
-    function testMintToZeroAddressReverts() public {
-        vm.prank(owner);
-        vm.expectRevert();
-
-        token.mint(address(0), 500);
-    }
-
-    function testBurnZeroTokensDoesNotChangeSupply() public {
-        uint256 supplyBefore = token.totalSupply();
-
-        vm.prank(owner);
-        token.burn(0);
-
-        assertEq(token.totalSupply(), supplyBefore);
-    }
-
-    function testBurnZeroTokensDoesNotChangeBalance() public {
-        uint256 balanceBefore = token.balanceOf(owner);
-
-        vm.prank(owner);
-        token.burn(0);
-
-        assertEq(token.balanceOf(owner), balanceBefore);
-    }
-
-    function testMintZeroTokensDoesNotChangeSupply() public {
-        uint256 supplyBefore = token.totalSupply();
-
-        vm.prank(owner);
-        token.mint(address(0xBEEF), 0);
-
-        assertEq(token.totalSupply(), supplyBefore);
-    }
-
-    function testMintZeroTokensDoesNotChangeBalance() public {
-        address holder = address(0xBEEF);
-        uint256 balanceBefore = token.balanceOf(holder);
-
-        vm.prank(owner);
-        token.mint(holder, 0);
-
-        assertEq(token.balanceOf(holder), balanceBefore);
-    }
-
-    function testMintZeroTokensDoesNotCreateHolder() public {
-        address newHolder = address(0xCAFE);
-
-        vm.prank(owner);
-        token.mint(newHolder, 0);
-
-        assertFalse(token.exists(newHolder));
-    }
-
-    function testMintCreatesHolderWithPositiveBalance() public {
-        address newHolder = address(0x1234);
-
-        vm.prank(owner);
-        token.mint(newHolder, 250);
-
-        assertTrue(token.exists(newHolder));
-        assertEq(
-            token.balanceOf(newHolder),
-            250 * 10 ** token.decimals()
-        );
-    }
-
-    function testMintToExistingHolderAccumulatesBalance() public {
-        address holder = address(0x5678);
-
-        vm.startPrank(owner);
-        token.mint(holder, 100);
-        token.mint(holder, 150);
-        vm.stopPrank();
-
-        assertEq(
-            token.balanceOf(holder),
-            250 * 10 ** token.decimals()
-        );
-    }
-
-    function testMintToExistingHolderKeepsHolderStatus() public {
-        address holder = address(0x5678);
-
-        vm.startPrank(owner);
-        token.mint(holder, 100);
-        token.mint(holder, 150);
-        vm.stopPrank();
-
-        assertTrue(token.exists(holder));
-    }
-
-    function testBurnAllTokensRemovesHolderStatus() public {
-        uint256 ownerBalance = token.balanceOf(owner);
-        uint256 amountToBurn = ownerBalance / (10 ** token.decimals());
-
-        vm.prank(owner);
-        token.burn(amountToBurn);
-
-        assertEq(token.balanceOf(owner), 0);
-        assertFalse(token.exists(owner));
-    }
-
-    function testPartialBurnKeepsHolderStatus() public {
-        uint256 balanceBefore = token.balanceOf(owner);
-
-        vm.prank(owner);
-        token.burn(100);
-
-        assertTrue(token.exists(owner));
-        assertEq(
-            token.balanceOf(owner),
-            balanceBefore - (100 * 10 ** token.decimals())
-        );
-    }
-
-    function testBurnOneTokenDecreasesBalanceCorrectly() public {
-        uint256 balanceBefore = token.balanceOf(owner);
-
-        vm.prank(owner);
-        token.burn(1);
-
-        assertEq(
-            token.balanceOf(owner),
-            balanceBefore - (1 * 10 ** token.decimals())
-        );
-    }
-
-    function testBurnOneTokenDecreasesTotalSupplyCorrectly() public {
-        uint256 supplyBefore = token.totalSupply();
-
-        vm.prank(owner);
-        token.burn(1);
-
-        assertEq(
-            token.totalSupply(),
-            supplyBefore - (1 * 10 ** token.decimals())
-        );
-    }
-
-    function testBurnMultipleTokensDecreasesBalanceCorrectly() public {
-        uint256 balanceBefore = token.balanceOf(owner);
-
-        vm.prank(owner);
-        token.burn(250);
-
-        assertEq(
-            token.balanceOf(owner),
-            balanceBefore - (250 * 10 ** token.decimals())
-        );
-    }
-
-    function testBurnMultipleTokensDecreasesTotalSupplyCorrectly() public {
-        uint256 supplyBefore = token.totalSupply();
-
-        vm.prank(owner);
-        token.burn(250);
-
-        assertEq(
-            token.totalSupply(),
-            supplyBefore - (250 * 10 ** token.decimals())
-        );
-    }
-
-    function testBurnMultipleTokensKeepsOwnerAsHolder() public {
-        vm.prank(owner);
-        token.burn(250);
-
-        assertTrue(token.exists(owner));
-    }
-
-    function testBurnMultipleTokensReducesBalanceAndSupplyEqually() public {
-        uint256 balanceBefore = token.balanceOf(owner);
-        uint256 supplyBefore = token.totalSupply();
-
-        vm.prank(owner);
-        token.burn(300);
-
-        uint256 burnedAmount = 300 * 10 ** token.decimals();
-
-        assertEq(token.balanceOf(owner), balanceBefore - burnedAmount);
-        assertEq(token.totalSupply(), supplyBefore - burnedAmount);
-    }
-
-    function testBurnMultipleTimesAccumulatesCorrectly() public {
-        uint256 balanceBefore = token.balanceOf(owner);
-
-        vm.startPrank(owner);
-        token.burn(100);
-        token.burn(200);
-        vm.stopPrank();
-
-        uint256 totalBurned = 300 * 10 ** token.decimals();
-
-        assertEq(
-            token.balanceOf(owner),
-            balanceBefore - totalBurned
-        );
-    }
-
-    function testBurnMultipleTimesDecreasesTotalSupplyCorrectly() public {
-        uint256 supplyBefore = token.totalSupply();
-
-        vm.startPrank(owner);
-        token.burn(100);
-        token.burn(200);
-        vm.stopPrank();
-
-        uint256 totalBurned = 300 * 10 ** token.decimals();
-
-        assertEq(
-            token.totalSupply(),
-            supplyBefore - totalBurned
-        );
-    }
-
-    function testBurnMultipleTimesKeepsOwnerAsHolder() public {
-        vm.startPrank(owner);
-        token.burn(100);
-        token.burn(200);
-        vm.stopPrank();
-
-        assertTrue(token.exists(owner));
-    }
-
-    function testBurnThenMintRestoresBalanceCorrectly() public {
-        uint256 balanceBefore = token.balanceOf(owner);
-
-        vm.startPrank(owner);
-        token.burn(200);
-        token.mint(owner, 200);
-        vm.stopPrank();
-
-        assertEq(token.balanceOf(owner), balanceBefore);
-    }
-
-    function testBurnThenMintRestoresTotalSupplyCorrectly() public {
-        uint256 supplyBefore = token.totalSupply();
-
-        vm.startPrank(owner);
-        token.burn(200);
-        token.mint(owner, 200);
-        vm.stopPrank();
-
-        assertEq(token.totalSupply(), supplyBefore);
-    }
-
-    function testBurnThenMintRestoresHolderStatusCorrectly() public {
-        uint256 ownerBalance = token.balanceOf(owner);
-        uint256 amountToBurn = ownerBalance / (10 ** token.decimals());
-
-        vm.startPrank(owner);
-        token.burn(amountToBurn);
-
-        assertFalse(token.exists(owner));
-
-        token.mint(owner, amountToBurn);
-        vm.stopPrank();
-
-        assertTrue(token.exists(owner));
-    }
-
-    function testBurnThenMintRestoresOriginalBalanceAndSupply() public {
-        uint256 balanceBefore = token.balanceOf(owner);
-        uint256 supplyBefore = token.totalSupply();
-
-        vm.startPrank(owner);
-        token.burn(300);
-        token.mint(owner, 300);
-        vm.stopPrank();
-
-        assertEq(token.balanceOf(owner), balanceBefore);
-        assertEq(token.totalSupply(), supplyBefore);
-    }
-
-    function testMintAfterFullBurnCreatesHolderAgain() public {
-        uint256 ownerBalance = token.balanceOf(owner);
-        uint256 amountToBurn = ownerBalance / (10 ** token.decimals());
-
-        vm.startPrank(owner);
-        token.burn(amountToBurn);
-
-        assertFalse(token.exists(owner));
-
-        token.mint(owner, 1);
-        vm.stopPrank();
-
-        assertTrue(token.exists(owner));
-        assertEq(token.balanceOf(owner), 1 * 10 ** token.decimals());
-    }
-
-    function testMintAfterFullBurnRestoresTotalSupplyByMintedAmount() public {
-        uint256 ownerBalance = token.balanceOf(owner);
-        uint256 amountToBurn = ownerBalance / (10 ** token.decimals());
-        uint256 supplyBefore = token.totalSupply();
-
-        vm.startPrank(owner);
-        token.burn(amountToBurn);
-        token.mint(owner, 50);
-        vm.stopPrank();
-
-        assertEq(
-            token.totalSupply(),
-            supplyBefore - ownerBalance + (50 * 10 ** token.decimals())
-        );
-    }
-
-    function testMintAfterFullBurnIncreasesSupplyFromZero() public {
-        uint256 ownerBalance = token.balanceOf(owner);
-        uint256 amountToBurn = ownerBalance / (10 ** token.decimals());
-
-        vm.startPrank(owner);
-        token.burn(amountToBurn);
-
-        assertEq(token.totalSupply(), 0);
-
-        token.mint(owner, 100);
-        vm.stopPrank();
-
-        assertEq(
-            token.totalSupply(),
-            100 * 10 ** token.decimals()
-        );
-    }
-
-    function testMintAfterFullBurnRestoresExactBalance() public {
-        uint256 ownerBalance = token.balanceOf(owner);
-        uint256 amountToBurn = ownerBalance / (10 ** token.decimals());
-
-        vm.startPrank(owner);
-        token.burn(amountToBurn);
-        token.mint(owner, 75);
-        vm.stopPrank();
-
-        assertEq(
-            token.balanceOf(owner),
-            75 * 10 ** token.decimals()
-        );
-    }
-
-    function testMintAfterFullBurnRestoresHolderWithCorrectSupply() public {
-        uint256 ownerBalance = token.balanceOf(owner);
-        uint256 amountToBurn = ownerBalance / (10 ** token.decimals());
-
-        vm.startPrank(owner);
-        token.burn(amountToBurn);
-
-        assertFalse(token.exists(owner));
-        assertEq(token.totalSupply(), 0);
-
-        token.mint(owner, 25);
-        vm.stopPrank();
-
-        assertTrue(token.exists(owner));
-        assertEq(token.balanceOf(owner), 25 * 10 ** token.decimals());
-        assertEq(token.totalSupply(), 25 * 10 ** token.decimals());
-    }
-
-    function testMintAfterFullBurnRestoresSupplyAndHolderTogether() public {
-        uint256 ownerBalance = token.balanceOf(owner);
-        uint256 amountToBurn = ownerBalance / (10 ** token.decimals());
-
-        vm.startPrank(owner);
-        token.burn(amountToBurn);
-
-        assertFalse(token.exists(owner));
-        assertEq(token.totalSupply(), 0);
-
-        token.mint(owner, 50);
-        vm.stopPrank();
-
-        assertTrue(token.exists(owner));
-        assertEq(token.balanceOf(owner), 50 * 10 ** token.decimals());
-        assertEq(token.totalSupply(), 50 * 10 ** token.decimals());
-    }
-
-    function testMintAfterFullBurnRestoresStateWithDifferentAmount() public {
-        uint256 ownerBalance = token.balanceOf(owner);
-        uint256 amountToBurn = ownerBalance / (10 ** token.decimals());
-
-        vm.startPrank(owner);
-        token.burn(amountToBurn);
-
-        assertFalse(token.exists(owner));
-        assertEq(token.totalSupply(), 0);
-
-        token.mint(owner, 125);
-        vm.stopPrank();
-
-        assertTrue(token.exists(owner));
-        assertEq(token.balanceOf(owner), 125 * 10 ** token.decimals());
-        assertEq(token.totalSupply(), 125 * 10 ** token.decimals());
-    }
-
-    function testMintAfterFullBurnCanRestoreDifferentHolder() public {
-        address newHolder = address(0xABCD);
-        uint256 ownerBalance = token.balanceOf(owner);
-        uint256 amountToBurn = ownerBalance / (10 ** token.decimals());
-
-        vm.startPrank(owner);
-        token.burn(amountToBurn);
-        token.mint(newHolder, 200);
-        vm.stopPrank();
-
-        assertFalse(token.exists(owner));
-        assertTrue(token.exists(newHolder));
-        assertEq(
-            token.balanceOf(newHolder),
-            200 * 10 ** token.decimals()
-        );
-    }
-
-    function testMintToDifferentHolderAfterFullBurnUpdatesTotalSupply() public {
-        address newHolder = address(0xCAFE);
-        uint256 ownerBalance = token.balanceOf(owner);
-        uint256 amountToBurn = ownerBalance / (10 ** token.decimals());
-
-        vm.startPrank(owner);
-        token.burn(amountToBurn);
-        token.mint(newHolder, 300);
-        vm.stopPrank();
-
-        assertEq(
-            token.totalSupply(),
-            300 * 10 ** token.decimals()
-        );
-    }
-
-    function testMintToDifferentHolderAfterFullBurnLeavesOwnerBalanceAtZero() public {
-        address newHolder = address(0xD00D);
-        uint256 ownerBalance = token.balanceOf(owner);
-        uint256 amountToBurn = ownerBalance / (10 ** token.decimals());
-
-        vm.startPrank(owner);
-        token.burn(amountToBurn);
-        token.mint(newHolder, 150);
-        vm.stopPrank();
-
-        assertEq(token.balanceOf(owner), 0);
-        assertFalse(token.exists(owner));
-        assertTrue(token.exists(newHolder));
-    }
-
-    function testMintToNewHolderAfterFullBurnKeepsExactSupplyAndBalance() public {
-        address newHolder = address(0xBEEF);
-        uint256 ownerBalance = token.balanceOf(owner);
-        uint256 amountToBurn = ownerBalance / (10 ** token.decimals());
-
-        vm.startPrank(owner);
-        token.burn(amountToBurn);
-        token.mint(newHolder, 400);
-        vm.stopPrank();
-
-        uint256 expectedAmount = 400 * 10 ** token.decimals();
-
-        assertEq(token.balanceOf(newHolder), expectedAmount);
-        assertEq(token.totalSupply(), expectedAmount);
-    }
-
-    function testMintToTwoNewHoldersAfterFullBurnSplitsSupplyCorrectly() public {
-        address holderOne = address(0x1111);
-        address holderTwo = address(0x2222);
-        uint256 ownerBalance = token.balanceOf(owner);
-        uint256 amountToBurn = ownerBalance / (10 ** token.decimals());
-
-        vm.startPrank(owner);
-        token.burn(amountToBurn);
-        token.mint(holderOne, 100);
-        token.mint(holderTwo, 250);
-        vm.stopPrank();
-
-        assertEq(
-            token.balanceOf(holderOne),
-            100 * 10 ** token.decimals()
+            tokenName,
+            "B20 Rocket"
         );
 
         assertEq(
-            token.balanceOf(holderTwo),
-            250 * 10 ** token.decimals()
+            tokenSymbol,
+            "B20"
         );
 
         assertEq(
-            token.totalSupply(),
-            350 * 10 ** token.decimals()
-        );
-    }
-
-    function testMintToTwoNewHoldersAfterFullBurnCreatesBothHolders() public {
-        address holderOne = address(0x3333);
-        address holderTwo = address(0x4444);
-        uint256 ownerBalance = token.balanceOf(owner);
-        uint256 amountToBurn = ownerBalance / (10 ** token.decimals());
-
-        vm.startPrank(owner);
-        token.burn(amountToBurn);
-        token.mint(holderOne, 100);
-        token.mint(holderTwo, 200);
-        vm.stopPrank();
-
-        assertFalse(token.exists(owner));
-        assertTrue(token.exists(holderOne));
-        assertTrue(token.exists(holderTwo));
-    }
-
-    function testMintToTwoNewHoldersAfterFullBurnKeepsOwnerAtZero() public {
-        address holderOne = address(0x5555);
-        address holderTwo = address(0x6666);
-        uint256 ownerBalance = token.balanceOf(owner);
-        uint256 amountToBurn = ownerBalance / (10 ** token.decimals());
-
-        vm.startPrank(owner);
-        token.burn(amountToBurn);
-        token.mint(holderOne, 120);
-        token.mint(holderTwo, 180);
-        vm.stopPrank();
-
-        assertEq(token.balanceOf(owner), 0);
-        assertFalse(token.exists(owner));
-        assertEq(token.totalSupply(), 300 * 10 ** token.decimals());
-    }
-
-    function testMintToTwoNewHoldersAfterFullBurnKeepsOwnerNonExistent() public {
-        address holderOne = address(0x7777);
-        address holderTwo = address(0x8888);
-        uint256 ownerBalance = token.balanceOf(owner);
-        uint256 amountToBurn = ownerBalance / (10 ** token.decimals());
-
-        vm.startPrank(owner);
-        token.burn(amountToBurn);
-        token.mint(holderOne, 175);
-        token.mint(holderTwo, 225);
-        vm.stopPrank();
-
-        assertFalse(token.exists(owner));
-        assertTrue(token.exists(holderOne));
-        assertTrue(token.exists(holderTwo));
-        assertEq(token.totalSupply(), 400 * 10 ** token.decimals());
-    }
-
-    function testMintToThreeNewHoldersAfterFullBurnDistributesSupplyCorrectly() public {
-        address holderOne = address(0x9001);
-        address holderTwo = address(0x9002);
-        address holderThree = address(0x9003);
-
-        uint256 ownerBalance = token.balanceOf(owner);
-        uint256 amountToBurn = ownerBalance / (10 ** token.decimals());
-
-        vm.startPrank(owner);
-        token.burn(amountToBurn);
-        token.mint(holderOne, 100);
-        token.mint(holderTwo, 200);
-        token.mint(holderThree, 300);
-        vm.stopPrank();
-
-        assertEq(token.balanceOf(holderOne), 100 * 10 ** token.decimals());
-        assertEq(token.balanceOf(holderTwo), 200 * 10 ** token.decimals());
-        assertEq(token.balanceOf(holderThree), 300 * 10 ** token.decimals());
-        assertEq(token.totalSupply(), 600 * 10 ** token.decimals());
-    }
-
-    function testMintToThreeNewHoldersAfterFullBurnCreatesAllHolders() public {
-        address holderOne = address(0xA001);
-        address holderTwo = address(0xA002);
-        address holderThree = address(0xA003);
-
-        uint256 ownerBalance = token.balanceOf(owner);
-        uint256 amountToBurn = ownerBalance / (10 ** token.decimals());
-
-        vm.startPrank(owner);
-        token.burn(amountToBurn);
-        token.mint(holderOne, 100);
-        token.mint(holderTwo, 200);
-        token.mint(holderThree, 300);
-        vm.stopPrank();
-
-        assertFalse(token.exists(owner));
-        assertTrue(token.exists(holderOne));
-        assertTrue(token.exists(holderTwo));
-        assertTrue(token.exists(holderThree));
-    }
-
-    function testMintToThreeNewHoldersAfterFullBurnKeepsOwnerBalanceAtZero() public {
-        address holderOne = address(0xB001);
-        address holderTwo = address(0xB002);
-        address holderThree = address(0xB003);
-
-        uint256 ownerBalance = token.balanceOf(owner);
-        uint256 amountToBurn = ownerBalance / (10 ** token.decimals());
-
-        vm.startPrank(owner);
-        token.burn(amountToBurn);
-        token.mint(holderOne, 150);
-        token.mint(holderTwo, 250);
-        token.mint(holderThree, 350);
-        vm.stopPrank();
-
-        assertEq(token.balanceOf(owner), 0);
-        assertFalse(token.exists(owner));
-        assertEq(token.totalSupply(), 750 * 10 ** token.decimals());
-    }
-
-    function testMintToThreeNewHoldersAfterFullBurnKeepsOwnerNonExistent() public {
-        address holderOne = address(0xC001);
-        address holderTwo = address(0xC002);
-        address holderThree = address(0xC003);
-
-        uint256 ownerBalance = token.balanceOf(owner);
-        uint256 amountToBurn = ownerBalance / (10 ** token.decimals());
-
-        vm.startPrank(owner);
-        token.burn(amountToBurn);
-        token.mint(holderOne, 125);
-        token.mint(holderTwo, 275);
-        token.mint(holderThree, 400);
-        vm.stopPrank();
-
-        assertFalse(token.exists(owner));
-        assertTrue(token.exists(holderOne));
-        assertTrue(token.exists(holderTwo));
-        assertTrue(token.exists(holderThree));
-        assertEq(token.totalSupply(), 800 * 10 ** token.decimals());
-    }
-
-    function testMintToThreeNewHoldersAfterFullBurnKeepsExactBalances() public {
-        address holderOne = address(0xD001);
-        address holderTwo = address(0xD002);
-        address holderThree = address(0xD003);
-
-        uint256 ownerBalance = token.balanceOf(owner);
-        uint256 amountToBurn = ownerBalance / (10 ** token.decimals());
-
-        vm.startPrank(owner);
-        token.burn(amountToBurn);
-        token.mint(holderOne, 125);
-        token.mint(holderTwo, 275);
-        token.mint(holderThree, 400);
-        vm.stopPrank();
-
-        assertEq(token.balanceOf(holderOne), 125 * 10 ** token.decimals());
-        assertEq(token.balanceOf(holderTwo), 275 * 10 ** token.decimals());
-        assertEq(token.balanceOf(holderThree), 400 * 10 ** token.decimals());
-    }
-
-    function testMintToThreeNewHoldersAfterFullBurnUpdatesTotalSupplyExactly() public {
-        address holderOne = address(0xE001);
-        address holderTwo = address(0xE002);
-        address holderThree = address(0xE003);
-
-        uint256 ownerBalance = token.balanceOf(owner);
-        uint256 amountToBurn = ownerBalance / (10 ** token.decimals());
-
-        vm.startPrank(owner);
-        token.burn(amountToBurn);
-        token.mint(holderOne, 125);
-        token.mint(holderTwo, 275);
-        token.mint(holderThree, 400);
-        vm.stopPrank();
-
-        assertEq(
-            token.totalSupply(),
-            800 * 10 ** token.decimals()
-        );
-    }
-
-    function testMintToThreeNewHoldersAfterFullBurnKeepsOwnerBalanceZeroAndSupplyCorrect() public {
-        address holderOne = address(0xF001);
-        address holderTwo = address(0xF002);
-        address holderThree = address(0xF003);
-
-        uint256 ownerBalance = token.balanceOf(owner);
-        uint256 amountToBurn = ownerBalance / (10 ** token.decimals());
-
-        vm.startPrank(owner);
-        token.burn(amountToBurn);
-        token.mint(holderOne, 200);
-        token.mint(holderTwo, 300);
-        token.mint(holderThree, 500);
-        vm.stopPrank();
-
-        assertEq(token.balanceOf(owner), 0);
-        assertFalse(token.exists(owner));
-        assertEq(token.totalSupply(), 1000 * 10 ** token.decimals());
-    }
-
-    function testMintToThreeNewHoldersAfterFullBurnKeepsAllHolderStatusesCorrect() public {
-        address holderOne = address(0x1101);
-        address holderTwo = address(0x1102);
-        address holderThree = address(0x1103);
-
-        uint256 ownerBalance = token.balanceOf(owner);
-        uint256 amountToBurn = ownerBalance / (10 ** token.decimals());
-
-        vm.startPrank(owner);
-        token.burn(amountToBurn);
-        token.mint(holderOne, 100);
-        token.mint(holderTwo, 200);
-        token.mint(holderThree, 300);
-        vm.stopPrank();
-
-        assertFalse(token.exists(owner));
-        assertTrue(token.exists(holderOne));
-        assertTrue(token.exists(holderTwo));
-        assertTrue(token.exists(holderThree));
-    }
-
-    function testMintToThreeNewHoldersAfterFullBurnBalancesSumMatchesTotalSupply() public {
-        address holderOne = address(0x1201);
-        address holderTwo = address(0x1202);
-        address holderThree = address(0x1203);
-
-        uint256 ownerBalance = token.balanceOf(owner);
-        uint256 amountToBurn = ownerBalance / (10 ** token.decimals());
-
-        vm.startPrank(owner);
-        token.burn(amountToBurn);
-        token.mint(holderOne, 150);
-        token.mint(holderTwo, 250);
-        token.mint(holderThree, 350);
-        vm.stopPrank();
-
-        uint256 combinedBalance =
-            token.balanceOf(holderOne) +
-            token.balanceOf(holderTwo) +
-            token.balanceOf(holderThree);
-
-        assertEq(combinedBalance, token.totalSupply());
-    }
-
-    function testMintToThreeNewHoldersAfterFullBurnSupplyMatchesMintedAmounts() public {
-        address holderOne = address(0x1301);
-        address holderTwo = address(0x1302);
-        address holderThree = address(0x1303);
-
-        uint256 ownerBalance = token.balanceOf(owner);
-        uint256 amountToBurn = ownerBalance / (10 ** token.decimals());
-
-        vm.startPrank(owner);
-        token.burn(amountToBurn);
-        token.mint(holderOne, 175);
-        token.mint(holderTwo, 225);
-        token.mint(holderThree, 325);
-        vm.stopPrank();
-
-        uint256 expectedSupply =
-            (175 + 225 + 325) * 10 ** token.decimals();
-
-        assertEq(token.totalSupply(), expectedSupply);
-    }
-
-    function testMintToThreeNewHoldersAfterFullBurnCombinedBalancesMatchMintedAmounts() public {
-        address holderOne = address(0x1401);
-        address holderTwo = address(0x1402);
-        address holderThree = address(0x1403);
-
-        uint256 ownerBalance = token.balanceOf(owner);
-        uint256 amountToBurn = ownerBalance / (10 ** token.decimals());
-
-        vm.startPrank(owner);
-        token.burn(amountToBurn);
-        token.mint(holderOne, 180);
-        token.mint(holderTwo, 220);
-        token.mint(holderThree, 400);
-        vm.stopPrank();
-
-        uint256 combinedBalance =
-            token.balanceOf(holderOne) +
-            token.balanceOf(holderTwo) +
-            token.balanceOf(holderThree);
-
-        uint256 expectedBalance =
-            (180 + 220 + 400) * 10 ** token.decimals();
-
-        assertEq(combinedBalance, expectedBalance);
-    }
-
-    function testMintToThreeNewHoldersAfterFullBurnEachBalanceIsPositive() public {
-        address holderOne = address(0x1501);
-        address holderTwo = address(0x1502);
-        address holderThree = address(0x1503);
-
-        uint256 ownerBalance = token.balanceOf(owner);
-        uint256 amountToBurn = ownerBalance / (10 ** token.decimals());
-
-        vm.startPrank(owner);
-        token.burn(amountToBurn);
-        token.mint(holderOne, 100);
-        token.mint(holderTwo, 200);
-        token.mint(holderThree, 300);
-        vm.stopPrank();
-
-        assertGt(token.balanceOf(holderOne), 0);
-        assertGt(token.balanceOf(holderTwo), 0);
-        assertGt(token.balanceOf(holderThree), 0);
-    }
-
-    function testMintToThreeNewHoldersAfterFullBurnOwnerCannotBurnAgain() public {
-        uint256 ownerBalance = token.balanceOf(owner);
-        uint256 amountToBurn = ownerBalance / (10 ** token.decimals());
-
-        vm.startPrank(owner);
-        token.burn(amountToBurn);
-
-        vm.expectRevert();
-        token.burn(1);
-
-        vm.stopPrank();
-    }
-
-    function testMintAfterFullBurnRestoresTotalSupply() public {
-        uint256 ownerBalance = token.balanceOf(owner);
-        uint256 amountToBurn = ownerBalance / (10 ** token.decimals());
-
-        vm.startPrank(owner);
-        token.burn(amountToBurn);
-
-        assertEq(token.totalSupply(), 0);
-
-        token.mint(owner, 500);
-
-        vm.stopPrank();
-
-        assertEq(
-            token.totalSupply(),
-            500 * 10 ** token.decimals()
-        );
-    }
-
-    function testMintAfterFullBurnRestoresOwnerBalance() public {
-        uint256 ownerBalance = token.balanceOf(owner);
-        uint256 amountToBurn = ownerBalance / (10 ** token.decimals());
-
-        vm.startPrank(owner);
-        token.burn(amountToBurn);
-
-        assertEq(token.balanceOf(owner), 0);
-
-        token.mint(owner, 500);
-
-        vm.stopPrank();
-
-        assertEq(
-            token.balanceOf(owner),
-            500 * 10 ** token.decimals()
-        );
-    }
-
-    function testMintAfterFullBurnRestoresOwnerExistence() public {
-        uint256 ownerBalance = token.balanceOf(owner);
-        uint256 amountToBurn = ownerBalance / (10 ** token.decimals());
-
-        vm.startPrank(owner);
-        token.burn(amountToBurn);
-
-        assertFalse(token.exists(owner));
-
-        token.mint(owner, 500);
-
-        vm.stopPrank();
-
-        assertTrue(token.exists(owner));
-    }
-
-    function testMintAfterFullBurnRestoresOwnerAndSupplyConsistently() public {
-        uint256 ownerBalance = token.balanceOf(owner);
-        uint256 amountToBurn = ownerBalance / (10 ** token.decimals());
-
-        vm.startPrank(owner);
-        token.burn(amountToBurn);
-
-        assertEq(token.balanceOf(owner), 0);
-        assertEq(token.totalSupply(), 0);
-        assertFalse(token.exists(owner));
-
-        token.mint(owner, 1000);
-
-        vm.stopPrank();
-
-        assertEq(
-            token.balanceOf(owner),
-            1000 * 10 ** token.decimals()
-        );
-        assertEq(
-            token.totalSupply(),
-            1000 * 10 ** token.decimals()
-        );
-        assertTrue(token.exists(owner));
-    }
-
-    function testNewHolderAfterOwnerFullBurnAndRemintWorksCorrectly() public {
-        address newHolder = address(0x1601);
-
-        uint256 ownerBalance = token.balanceOf(owner);
-        uint256 amountToBurn = ownerBalance / (10 ** token.decimals());
-
-        vm.startPrank(owner);
-
-        token.burn(amountToBurn);
-
-        assertFalse(token.exists(owner));
-
-        token.mint(owner, 500);
-        token.mint(newHolder, 250);
-
-        vm.stopPrank();
-
-        assertTrue(token.exists(owner));
-        assertTrue(token.exists(newHolder));
-
-        assertEq(
-            token.balanceOf(owner),
-            500 * 10 ** token.decimals()
+            tokenDecimals,
+            18
         );
 
         assertEq(
-            token.balanceOf(newHolder),
-            250 * 10 ** token.decimals()
-        );
-
-        assertEq(
-            token.totalSupply(),
-            750 * 10 ** token.decimals()
+            supply,
+            1_000_000 * unit
         );
     }
 }

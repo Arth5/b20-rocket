@@ -16,16 +16,9 @@ contract B20Token is ERC20, Ownable {
     {
         _mint(initialOwner_, initialSupply_ * 10 ** decimals());
     }
-        function mint(address to, uint256 amount) external onlyOwner {
-        _mint(to, amount * 10 ** decimals());
-    }
 
         function burn(uint256 amount) external {
         _burn(msg.sender, amount * 10 ** decimals());
-    }
-
-        function burnFrom(address account, uint256 amount) external onlyOwner {
-        _burn(account, amount * 10 ** decimals());
     }
 
         function getOwner() external view returns (address) {
