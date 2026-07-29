@@ -2,6 +2,8 @@
 pragma solidity ^0.8.28;
 
 import {Test} from "forge-std/Test.sol";
+import {Vm} from "forge-std/Vm.sol";
+
 import {B20Launchpad} from "../src/B20Launchpad.sol";
 import {B20Token} from "../src/B20Token.sol";
 
@@ -10,6 +12,14 @@ contract B20LaunchpadTest is Test {
 
     address internal creator = address(0xA11CE);
     uint256 internal unit = 10 ** 18;
+
+    event TokenCreated(
+        address indexed creator,
+        address indexed token,
+        string name,
+        string symbol,
+        uint256 supply
+    );
 
     function setUp() public {
         launchpad = new B20Launchpad();
@@ -107,5 +117,38 @@ contract B20LaunchpadTest is Test {
             tokenTwo.balanceOf(creator),
             0
         );
+    }
+
+    function testTokenCreatedEventIsEmitted() public {
+        vm.recordLogs();
+
+        vm.prank(creator);
+
+        launchpad.createToken(
+            "Event Token",
+            "EVT",
+            5_000
+        );
+
+        Vm.Log[] memory logs = vm.getRecordedLogs();
+
+        bytes32 expectedSignature = keccak256(
+            "TokenCreated(address,address,string,string,uint256)"
+        );
+
+        bool foundEvent = false;
+
+        for (uint256 i = 0; i < logs.length; i++) {
+            if (
+                logs[i].emitter == address(launchpad) &&
+                logs[i].topics.length > 0 &&
+                logs[i].topics[0] == expectedSignature
+            ) {
+                foundEvent = true;
+                break;
+            }
+        }
+
+        assertTrue(foundEvent);
     }
 }
