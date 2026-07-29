@@ -17,6 +17,8 @@ contract B20Launchpad {
         string memory symbol_,
         uint256 supply_
     ) external returns (address tokenAddress) {
+        require(supply_ > 0, "Supply must be greater than zero");
+        
         B20Token token = new B20Token(
             name_,
             symbol_,

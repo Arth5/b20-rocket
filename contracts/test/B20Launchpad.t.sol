@@ -151,4 +151,18 @@ contract B20LaunchpadTest is Test {
 
         assertTrue(foundEvent);
     }
+
+    function testCannotCreateTokenWithZeroSupply() public {
+        vm.prank(creator);
+
+        vm.expectRevert(
+            bytes("Supply must be greater than zero")
+        );
+
+        launchpad.createToken(
+            "Zero Token",
+            "ZERO",
+            0
+        );
+    }
 }
