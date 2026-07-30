@@ -165,4 +165,21 @@ contract B20LaunchpadTest is Test {
             0
         );
     }
+
+    function testCanCreateTokenWithMinimumSupply() public {
+        vm.prank(creator);
+
+        address tokenAddress = launchpad.createToken(
+            "Minimum Token",
+            "MIN",
+            1
+        );
+
+        assertTrue(tokenAddress != address(0));
+
+        B20Token token = B20Token(tokenAddress);
+
+        assertEq(token.totalSupply(), 1 * 10 ** token.decimals());
+        assertEq(token.balanceOf(creator), 1 * 10 ** token.decimals());
+    }
 }
