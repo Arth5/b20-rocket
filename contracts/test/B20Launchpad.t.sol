@@ -182,4 +182,25 @@ contract B20LaunchpadTest is Test {
         assertEq(token.totalSupply(), 1 * 10 ** token.decimals());
         assertEq(token.balanceOf(creator), 1 * 10 ** token.decimals());
     }
+
+    function testCanCreateTokenWithLargeSupply() public {
+        vm.prank(creator);
+
+        uint256 supply = 1_000_000;
+
+        address tokenAddress = launchpad.createToken(
+            "Large Supply Token",
+            "LARGE",
+            supply
+        );
+
+        assertTrue(tokenAddress != address(0));
+
+        B20Token token = B20Token(tokenAddress);
+
+        uint256 expectedSupply = supply * 10 ** token.decimals();
+
+        assertEq(token.totalSupply(), expectedSupply);
+        assertEq(token.balanceOf(creator), expectedSupply);
+    }
 }
