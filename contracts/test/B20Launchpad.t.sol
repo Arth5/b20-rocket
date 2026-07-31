@@ -231,4 +231,32 @@ contract B20LaunchpadTest is Test {
             1_000
         );
     }
+
+    function testCannotCreateTokenWithLongSymbol() public {
+        vm.prank(creator);
+
+        vm.expectRevert(
+            bytes("Symbol too long")
+        );
+
+        launchpad.createToken(
+            "Long Symbol Token",
+            "ABCDEFGHIJK",
+            1_000
+        );
+    }
+
+    function testCannotCreateTokenWithLongName() public {
+        vm.prank(creator);
+
+        vm.expectRevert(
+            bytes("Name too long")
+        );
+
+        launchpad.createToken(
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ",
+            "LONG",
+            1_000
+        );
+    }
 }

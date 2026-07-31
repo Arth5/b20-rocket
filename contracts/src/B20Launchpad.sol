@@ -18,7 +18,9 @@ contract B20Launchpad {
         uint256 supply_
     ) external returns (address tokenAddress) {
         require(bytes(name_).length > 0, "Name cannot be empty");
+        require(bytes(name_).length <= 50, "Name too long");
         require(bytes(symbol_).length > 0, "Symbol cannot be empty");
+        require(bytes(symbol_).length <= 10, "Symbol too long");
         require(supply_ > 0, "Supply must be greater than zero");
         
         B20Token token = new B20Token(
