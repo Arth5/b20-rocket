@@ -203,4 +203,18 @@ contract B20LaunchpadTest is Test {
         assertEq(token.totalSupply(), expectedSupply);
         assertEq(token.balanceOf(creator), expectedSupply);
     }
+
+    function testCannotCreateTokenWithEmptyName() public {
+        vm.prank(creator);
+
+        vm.expectRevert(
+            bytes("Name cannot be empty")
+        );
+
+        launchpad.createToken(
+            "",
+            "EMPTY",
+            1_000
+        );
+    }
 }
