@@ -217,4 +217,18 @@ contract B20LaunchpadTest is Test {
             1_000
         );
     }
+
+    function testCannotCreateTokenWithEmptySymbol() public {
+        vm.prank(creator);
+
+        vm.expectRevert(
+            bytes("Symbol cannot be empty")
+        );
+
+        launchpad.createToken(
+            "Empty Symbol Token",
+            "",
+            1_000
+        );
+    }
 }
